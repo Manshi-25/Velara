@@ -1,0 +1,647 @@
+import { createFileRoute, Outlet } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { Link } from "@tanstack/react-router";
+import { AppLayout } from "@/components/AppLayout";
+import { BackButton } from "@/components/BackButton";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Pencil } from "lucide-react";
+import { useProfile } from "@/hooks/useProfile";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import QRCode from "react-qr-code";
+import { QrCode } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import {MoreVertical,Trash2,Archive,Pin,Copy,Edit} from "lucide-react";
+import {DropdownMenu,DropdownMenuContent,DropdownMenuItem,DropdownMenuTrigger} from "@/components/ui/dropdown-menu";
+import { generateDreamImage } from "@/lib/randomDreamImage";
+
+
+export const Route = createFileRoute("/account")({
+  component: Profile
+});
+
+function Profile() {
+  const profile = useProfile();
+  const [open, setOpen] = useState(false);
+  const [bio, setBio] = useState("");
+  const [username, setUsername] = useState("");
+  const [dreamVibe, setDreamVibe] = useState("");
+  const [openFollowers, setOpenFollowers] = useState(false);
+  const [openFollowing, setOpenFollowing] = useState(false);
+  const [followers, setFollowers] = useState<any[]>([]);
+  const [following, setFollowing] = useState<any[]>([]);
+  const [followingMap, setFollowingMap] = useState<Record<string, boolean>>({});
+  const [saving, setSaving] = useState(false);
+  const [dreams,setDreams] = useState<any[]>([]);
+  const [activeTab,setActiveTab]=useState("posts");
+  const [posts,setPosts]=useState<any[]>([]);
+  const [drafts,setDrafts]=useState<any[]>([]);
+  
+  const [showQR,setShowQR]= useState(false);
+  const navigate = useNavigate();
+  const profileLink = typeof window !== "undefined" && profile?.id
+  ? `${window.location.origin}/profile/${profile.id}`
+  : "";
+  console.log("QR link:", profileLink);
+  useEffect(() => {
+    if (!profile) return;
+
+    setBio(profile.bio || "");
+    setUsername(profile.anonymous_name || "");
+    setDreamVibe(profile.dream_vibe || "");
+
+    async function loadData() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      /* POSTS */
+      const { data: postsData } = await supabase
+        .from("dreams")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      /* DRAFTS */
+      const { data: draftsData } = await supabase
+        .from("drafts")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      setPosts((postsData || []).sort((a, b) => Number(b.pinned || false) - Number(a.pinned || false)));
+      setDrafts(draftsData || []);
+    }
+
+    loadData();
+  }, [profile]);
+
+  function canChangeUsername() {
+    const lastChange = profile?.last_username_change
+      ? new Date(profile.last_username_change)
+      : null;
+
+    if (!lastChange) {
+      return true;
+    }
+
+    const now = new Date();
+    const diff = (now.getTime() - lastChange.getTime()) / (1000 * 60 * 60 * 24);
+
+    if (diff > 30) {
+      return true;
+    }
+
+    return (profile.username_changes || 0) < 2;
+  }
+
+  async function loadFollowers() {
+    if (!profile?.id) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    const { data, error } = await supabase.from("followers").select(`follower_id, follower:profiles!followers_follower_id_fkey( id, anonymous_name, dream_vibe )`).eq("following_id", profile.id);
+    if (error) { console.log(error); return; }
+    setFollowers(data || []);
+    if (!user || !data) return;
+    const followerIds = data.map((x) => x.follower.id);
+    const { data: currentFollowing } = await supabase.from("followers").select("following_id").eq("follower_id", user.id).in("following_id", followerIds);
+    const map: Record<string, boolean> = {};
+    currentFollowing?.forEach((x) => { map[x.following_id] = true; });
+    setFollowingMap(map);
+  }
+
+  async function loadFollowing() {
+    if (!profile?.id) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    const { data, error } = await supabase.from("followers").select(`following_id, following:profiles!followers_following_id_fkey( id, anonymous_name, dream_vibe )`).eq("follower_id", profile.id);
+    if (error) { console.log(error); return; }
+    setFollowing(data || []);
+    if (!user || !data) return;
+    const map: Record<string, boolean> = {};
+    data.forEach((item) => { map[item.following.id] = true; });
+    setFollowingMap(map);
+  }
+
+  async function toggleFollowUser(targetUserId: string) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const isFollowing = followingMap[targetUserId];
+    if (isFollowing) {
+      const { error } = await supabase.from("followers").delete().eq("follower_id", user.id).eq("following_id", targetUserId);
+      if (error) { toast.error("Failed"); return; }
+      setFollowingMap((prev) => ({ ...prev, [targetUserId]: false }));
+      setFollowing((prev) => prev.filter((x) => x.following.id !== targetUserId));
+      toast.success("Unfollowed");
+    } else {
+      const { error } = await supabase.from("followers").insert({ follower_id: user.id, following_id: targetUserId });
+      if (error) { toast.error("Failed"); return; }
+      setFollowingMap((prev) => ({ ...prev, [targetUserId]: true }));
+      toast.success("Echoing 🌙");
+    }
+    await loadFollowers();
+    await loadFollowing();
+  }
+
+  async function saveProfile() {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      setSaving(true);
+
+      let updateData: any = {
+        bio,
+        dream_vibe: dreamVibe
+      };
+
+      if (username !== profile.anonymous_name && canChangeUsername()) {
+        updateData.anonymous_name = username;
+        updateData.username_changes = (profile.username_changes || 0) + 1;
+        updateData.last_username_change = new Date();
+      }
+
+      const { error } = await supabase
+        .from("profiles")
+        .update(updateData)
+        .eq("id", user.id);
+
+      if (error) {
+        toast.error("Update failed");
+        return;
+      }
+
+      toast.success("Profile updated ✨");
+      setOpen(false);
+      window.location.reload();
+    } catch {
+      toast.error("Something went wrong");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function deleteDream(id: string) {
+    try {
+      // delete from dreams table
+      const { error } = await supabase
+        .from("dreams")
+        .delete()
+        .eq("id", id);
+
+      if (error) {
+        console.log(error);
+        toast.error("Failed deleting");
+        return;
+      }
+
+      // decrease profile post count
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (user) {
+        await supabase.rpc("refresh_post_count", {
+          profile_id: user.id,
+        });
+      }
+
+      // remove instantly from UI
+      setPosts((prev) => prev.filter((x) => x.id !== id));
+
+      toast.success("Dream deleted");
+    } catch (err) {
+      console.log(err);
+      toast.error("Something went wrong");
+    }
+  }
+
+      async function deleteDraft(id: string) {
+        const { error } = await supabase
+          .from("drafts")
+          .delete()
+          .eq("id", id);
+
+        if (error) {
+          toast.error("Failed deleting");
+          return;
+        }
+
+        setDrafts((prev) => prev.filter((x) => x.id !== id));
+        toast.success("Draft deleted");
+      }
+
+      async function copyLink(id: string) {
+        const url = `${window.location.origin}/dream/${id}`;
+        navigator.clipboard.writeText(url);
+        toast.success("Link copied");
+      }
+
+      async function togglePin(dreamId: string, current: boolean) {
+        if (!current) {
+          const pinnedCount = posts.filter((p) => p.pinned).length;
+          if (pinnedCount >= 3) {
+            toast.error("You can only pin up to 3 dreams 📌");
+            return;
+          }
+        }
+        const { error } = await supabase.from("dreams").update({ pinned: !current }).eq("id", dreamId);
+        if (error) {
+          toast.error("Failed");
+          return;
+        }
+        setPosts((prev) => prev.map((p) => p.id === dreamId ? { ...p, pinned: !current } : p).sort((a, b) => Number(b.pinned || false) - Number(a.pinned || false)));
+        toast.success(current ? "Dream unpinned" : "Dream pinned 📌");
+      }
+
+      async function archiveDream(id: string) {
+        const { error } = await supabase
+          .from("dreams")
+          .update({ archived: true })
+          .eq("id", id);
+
+        if (error) {
+          toast.error("Archive failed");
+          return;
+        }
+
+        setPosts((prev) => prev.filter((x) => x.id !== id));
+        toast.success("Dream archived 🌙");
+      }
+
+      async function archiveDraft(id: string) {
+        const { error } = await supabase
+          .from("drafts")
+          .update({ archived: true })
+          .eq("id", id);
+
+        if (error) {
+          toast.error("Archive failed");
+          return;
+        }
+
+        setDrafts((prev) => prev.filter((x) => x.id !== id));
+        toast.success("Draft archived");
+      }
+
+  if (!profile) {
+    return (
+      <AppLayout>
+        <div className="flex justify-center items-center h-[50vh]">
+          Loading...
+        </div>
+      </AppLayout>
+    );
+  }
+
+  const wordCount = bio.trim() ? bio.trim().split(/\s+/).length : 0;
+
+  return (
+    <AppLayout>
+      <BackButton />
+
+      <div className="bg-card border rounded-3xl p-6 shadow-lg">
+        <div className="flex flex-col sm:flex-row gap-6 items-center">
+          <div className="h-24 w-24 rounded-full gradient-violet grid place-items-center text-white text-3xl font-bold shadow-lg">
+            {profile.anonymous_name?.[0]?.toUpperCase()}
+          </div>
+
+          <div className="flex-1">
+            <h2 className="font-display text-3xl">
+              {profile.anonymous_name}
+            </h2>
+            <p className="text-muted-foreground mt-1">
+              {profile.bio || "No bio yet"}
+            </p>
+            <p className="text-xs mt-2 text-accent">
+              🌙 {profile.dream_vibe || "Dream Wanderer"}
+            </p>
+
+            <div className="flex gap-5 mt-4 flex-wrap">
+              <div>{posts.length} posts</div>
+              <button onClick={() => { setOpenFollowers(true); loadFollowers(); }}>
+                {profile.followers_count} Echoers
+              </button>
+              <button onClick={() => { setOpenFollowing(true); loadFollowing(); }}>
+                {profile.following_count} Echoing
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex gap-3 mt-6">
+          <Button onClick={() => setOpen(true)}>
+            <Pencil className="w-4 h-4 mr-2" />
+            Edit
+          </Button>
+
+          <Button onClick={() => setShowQR(true)}>
+            <QrCode className="w-4 h-4 mr-2" />
+            QR
+          </Button>
+
+          <Button onClick={()=>navigate({to:"/dashboard"})}>
+            Dashboard
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex gap-3 mt-8">
+        <button
+          onClick={() => setActiveTab("posts")}
+          className={`px-6 py-2 rounded-full transition border ${
+            activeTab === "posts"
+              ? "bg-primary text-white border-primary"
+              : "bg-card border-border"
+          }`}
+        >
+          Posts
+        </button>
+
+        <button
+          onClick={() => setActiveTab("drafts")}
+          className={`px-6 py-2 rounded-full transition border ${
+            activeTab === "drafts"
+              ? "bg-primary text-white border-primary"
+              : "bg-card border-border"
+          }`}
+        >
+          Drafts
+        </button>
+      </div>
+
+      <div className="mt-8">
+        
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+          {activeTab === "posts"
+            ? posts.map((post) => (
+              
+                <Link
+                  key={post.id}
+                  to="/dream/$id"
+                  params={{ id: post.id }}
+                  className="rounded-3xl overflow-hidden border bg-card relative"
+                >
+                  {post.pinned && (
+                    <div className="absolute top-3 left-3 z-10 bg-black/70 text-white px-2 py-1 rounded-full flex items-center gap-1 text-xs">
+                      <Pin className="w-3 h-3 fill-current"/>
+                      Pinned
+                    </div>
+                  )}
+                  <img
+                    src={post.cover || generateDreamImage()}
+                    className="w-full h-56 object-cover"
+                  />
+
+                  <div className="p-3">
+                    <h2 className="font-bold">{post.title}</h2>
+                    <p className="text-xs text-muted-foreground">👁 {post.views_count}</p>
+                  </div>
+
+                  <div className="absolute bottom-3 right-3">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button size="icon" variant="ghost" onClick={(e) => {e.preventDefault(); e.stopPropagation();}} >
+                          <MoreVertical className="w-5 h-5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+
+                      <DropdownMenuContent>
+                        <DropdownMenuItem onClick={(e) =>{e.preventDefault(); e.stopPropagation(); archiveDream(post.id)}}>
+                          <Archive className="mr-2 h-4 w-4" />
+                          Archive Dream
+                        </DropdownMenuItem>
+
+                        <DropdownMenuItem onClick={(e)=>{e.preventDefault(); e.stopPropagation(); togglePin(post.id, post.pinned)}}>
+                          <Pin className="mr-2 h-4 w-4" />
+                           {post.pinned ? "Unpin Dream" : "Pin Dream"}
+                        </DropdownMenuItem>
+
+                        <DropdownMenuItem onClick={(e) => {e.preventDefault(); e.stopPropagation(); copyLink(post.id)}}>
+                          <Copy className="mr-2 h-4 w-4" />
+                          Copy Link
+                        </DropdownMenuItem>
+
+                        <DropdownMenuItem
+                          onClick={(e) => {e.preventDefault(); e.stopPropagation(); deleteDream(post.id)}}
+                          className="text-red-500"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete Dream
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </Link>
+              ))
+            : drafts.map((draft) => (
+                //add here
+                <div
+                  key={draft.id}
+                  className="rounded-3xl overflow-hidden border bg-card relative"
+                >
+                  <img
+                    src={draft.cover}
+                    className="w-full h-56 object-cover"
+                  />
+
+                  <div className="p-3">
+                    <h2 className="font-bold">{draft.title}</h2>
+                    <p className="text-xs text-muted-foreground">Draft 🌙</p>
+                  </div>
+
+                  <div className="absolute bottom-3 right-3">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button size="icon" variant="ghost">
+                          <MoreVertical className="w-5 h-5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+
+                      <DropdownMenuContent>
+                        <DropdownMenuItem
+                          onClick={() =>
+                            navigate({
+                              to: "/post",
+                              search: {
+                                draftId: draft.id,
+                              },
+                            })
+                          }
+                        >
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit Draft
+                        </DropdownMenuItem>
+
+                        <DropdownMenuItem onClick={() => archiveDraft(draft.id)}>
+                          <Archive className="mr-2 h-4 w-4" />
+                          Move To Archive
+                        </DropdownMenuItem>
+
+                        <DropdownMenuItem
+                          onClick={() => deleteDraft(draft.id)}
+                          className="text-red-500"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete Draft
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
+              ))}
+        </div>
+      </div>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="rounded-3xl border bg-card p-6">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">Edit Profile</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-5">
+            <div>
+              <label className="text-sm block mb-2">Username</label>
+              <input
+                value={username}
+                disabled={!canChangeUsername()}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full border rounded-xl p-3 bg-background"
+              />
+              <p className="text-xs mt-1 text-muted-foreground">
+                {canChangeUsername()
+                  ? "2 username changes allowed monthly"
+                  : "Monthly username limit reached"}
+              </p>
+            </div>
+
+            <div>
+              <label className="text-sm block mb-2">Bio</label>
+              <textarea
+                value={bio}
+                onChange={(e) => {
+                  const words = e.target.value.trim().split(/\s+/);
+                  if (words.length <= 60) {
+                    setBio(e.target.value);
+                  }
+                }}
+                className="w-full min-h-[120px] border rounded-xl p-3 bg-background"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                {wordCount}/60 words
+              </p>
+            </div>
+
+            <div>
+              <label className="text-sm block mb-2">Dream vibe</label>
+              <select
+                value={dreamVibe}
+                onChange={(e) => setDreamVibe(e.target.value)}
+                className="w-full border rounded-xl p-3 bg-background"
+              >
+                <option>Lucid Dreamer</option>
+                <option>Night Wanderer</option>
+                <option>Cosmic Explorer</option>
+                <option>Mystical Soul</option>
+                <option>Dream Collector</option>
+              </select>
+            </div>
+
+            <Button
+              className="w-full gradient-violet"
+              disabled={saving}
+              onClick={saveProfile}
+            >
+              {saving ? "Saving..." : "Save Changes"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      {/* QR Dialog */}
+      <Dialog open={showQR} onOpenChange={setShowQR}>
+        <DialogContent className="rounded-3xl bg-card border border-border/60 p-6">
+          <DialogHeader>
+            <DialogTitle className="text-center text-2xl">
+              Your Dream QR 🌙
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="flex flex-col items-center gap-4">
+            <div className="bg-white p-4 rounded-2xl shadow-lg">
+              <QRCode
+                value={profileLink}
+                size={180}
+              />
+            </div>
+
+            <div className="text-center">
+              <h3 className="font-bold text-lg">
+                @{profile.anonymous_name}
+              </h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Scan to visit profile
+              </p>
+            </div>
+
+            <Button
+              className="w-full"
+              onClick={() => {
+                navigator.clipboard.writeText(profileLink);
+                toast.success("Profile link copied ✨");
+              }}
+            >
+              Copy Profile Link
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={openFollowers} onOpenChange={setOpenFollowers}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Echoers ({followers.length})</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 max-h-[400px] overflow-y-auto">
+            {followers.map((item: any) => (
+              <div key={item.follower.id} className="flex items-center justify-between">
+                <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate({ to: "/profile/$id", params: { id: item.follower.id } })}>
+                  <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center">{item.follower.anonymous_name?.[0]}</div>
+                  <div>
+                    <div>{item.follower.anonymous_name}</div>
+                  </div>
+                </div>
+                {item.follower.id !== profile.id && (
+                  <Button size="sm" variant={followingMap[item.follower.id] ? "secondary" : "default"} onClick={() => toggleFollowUser(item.follower.id)}>
+                    {followingMap[item.follower.id] ? "Echoing" : "Echo"}
+                  </Button>
+                )}
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={openFollowing} onOpenChange={setOpenFollowing}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Echoing ({following.length})</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 max-h-[400px] overflow-y-auto">
+            {following.map((item: any) => (
+              <div key={item.following.id} className="flex items-center justify-between">
+                <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate({ to: "/profile/$id", params: { id: item.following.id } })}>
+                  <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center">{item.following.anonymous_name?.[0]}</div>
+                  <div>
+                    <div className="font-medium">{item.following.anonymous_name}</div>
+                  </div>
+                </div>
+                {item.following.id !== profile.id && (
+                  <Button size="sm" variant={followingMap[item.following.id] ? "secondary" : "default"} onClick={() => toggleFollowUser(item.following.id)}>
+                    {followingMap[item.following.id] ? "Echoing" : "Echo"}
+                  </Button>
+                )}
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </AppLayout>
+  );
+}
+
