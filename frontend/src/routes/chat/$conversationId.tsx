@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppLayout } from "@/components/AppLayout";
 import { BackButton } from "@/components/BackButton";
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { useMessages } from "@/hooks/useMessages";
 import { useTyping } from "@/hooks/useTyping";
 import { MessageCircle } from "lucide-react";
+import type { Message } from "@/types/chat";
 
 export const Route = createFileRoute("/chat/$conversationId")({
   head: () => ({
@@ -22,9 +23,10 @@ export const Route = createFileRoute("/chat/$conversationId")({
 
 function ChatThread() {
   const { conversationId } = Route.useParams();
-  const { messages, conversation, isLoading, error, send, isSending, currentUserId } =
+  const { messages, conversation, isLoading, error, send, isSending, currentUserId, getMessageById } =
     useMessages(conversationId);
   const { otherUserTyping, notifyTyping } = useTyping(conversationId);
+  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -62,13 +64,13 @@ function ChatThread() {
   }
 
   return (
-    <AppLayout>
-      <div className="max-w-2xl mx-auto flex flex-col h-[calc(100vh-16rem)] sm:h-[calc(100vh-18rem)]">
+    <AppLayout> 
+        <div className="w-full max-w-5xl mx-auto flex flex-col lg:h-[calc(100vh-15rem)] sm:h-[calc(100vh-10rem)]">
         {conversation && (
           <ChatHeader otherUser={conversation.otherUser} isTyping={otherUserTyping} />
         )}
 
-        <div className="flex-1 overflow-y-auto py-4 space-y-3">
+        <div className="flex-1 overflow-y-auto scrollbar-none py-4 space-y-3">
           {isLoading && (
             <p className="text-center text-sm text-muted-foreground py-10">Loading conversation…</p>
           )}
@@ -92,6 +94,8 @@ function ChatThread() {
               message={message}
               isMine={message.sender_id === currentUserId}
               showSeenLabel={i === lastMineIndex}
+              repliedMessage={getMessageById(message.reply_to)}
+              onReply={(m) => setReplyingTo(m)}
             />
           ))}
 
@@ -106,11 +110,19 @@ function ChatThread() {
           <div ref={scrollRef} />
         </div>
 
+        <div className=  "mt-4">
+
         <ChatInput
-          onSend={(text) => send(text)}
+          onSend={async (text, kind = "text", replyTo) => {
+            await send(text, kind, replyTo ?? replyingTo?.id ?? null);
+            setReplyingTo(null);
+          }}
           onTyping={notifyTyping}
           disabled={isSending || isLoading}
+          replyingTo={replyingTo}
+          onCancelReply={() => setReplyingTo(null)}
         />
+        </div>
       </div>
     </AppLayout>
   );

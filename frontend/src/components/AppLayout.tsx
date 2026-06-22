@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AiAssistant } from "@/components/AiAssistant";
 import { useAuth } from "@/lib/auth";
+import { usePresenceTracking } from "@/hooks/usePresence";
 
 const publicNav = [
   { to: "/", label: "Home", icon: Home },
@@ -27,6 +28,7 @@ const authNav = [
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const { loggedIn, login, logout } = useAuth();
+  usePresenceTracking();
   const navItems = loggedIn ? authNav : publicNav;
   const [open, setOpen] = useState(false);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
@@ -95,9 +97,22 @@ export function AppLayout({ children }: { children: ReactNode }) {
       <div className="flex-1 min-w-0 max-w-full flex flex-col overflow-x-clip">
         <header className="sticky top-0 z-20 bg-surface/80 backdrop-blur border-b border-border/60 px-3 sm:px-4 lg:px-8 py-3 sm:py-4 flex items-center gap-2 sm:gap-3">
           <Button variant="ghost" size="icon" className="lg:hidden shrink-0" onClick={() => setOpen(true)}><Menu className="h-5 w-5" /></Button>
-          <Button asChild variant="ghost" size="icon" aria-label="Messages" className="rounded-full bg-primary/15 text-accent hover:bg-primary/25 shrink-0">
-            <Link to="/chat"><MessageCircle className="h-5 w-5" /></Link>
-          </Button>
+          {/*<Button asChild variant="ghost" size="icon" aria-label="Messages" className="rounded-full bg-primary/15 text-accent hover:bg-primary/25 shrink-0">
+            <Link to="/chat" search={{ tab: undefined }}><MessageCircle className="h-5 w-5" /></Link>
+          </Button>*/}
+          {loggedIn && (
+  <Button
+    asChild
+    variant="ghost"
+    size="icon"
+    aria-label="Messages"
+    className="rounded-full bg-primary/15 text-accent hover:bg-primary/25 shrink-0"
+  >
+    <Link to="/chat" search={{ tab: undefined }}>
+      <MessageCircle className="h-5 w-5" />
+    </Link>
+  </Button>
+)}
           <div className="flex-1 text-center min-w-0">
             <Link to="/" className="font-display text-2xl sm:text-4xl lg:text-6xl tracking-tight bg-gradient-to-r from-primary via-accent to-prophetic bg-clip-text text-transparent drop-shadow-[0_0_25px_oklch(0.65_0.16_50/0.35)]">
               Velara
@@ -108,12 +123,26 @@ export function AppLayout({ children }: { children: ReactNode }) {
             <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Toggle theme">
               {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </Button>
-            <Button asChild variant="ghost" size="icon" className="relative" aria-label="Notifications">
+            {/*<Button asChild variant="ghost" size="icon" className="relative" aria-label="Notifications">
               <Link to="/notifications">
                 <Bell className="h-5 w-5" />
                 <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-nightmare" />
               </Link>
-            </Button>
+            </Button>*/}
+            {loggedIn && (
+  <Button
+    asChild
+    variant="ghost"
+    size="icon"
+    className="relative"
+    aria-label="Notifications"
+  >
+    <Link to="/notifications">
+      <Bell className="h-5 w-5" />
+      <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-nightmare" />
+    </Link>
+  </Button>
+)}
           </div>
         </header>
         <main className={`flex-1 px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-10 ${showSearch ? "pb-28" : "pb-10"}`}>{children}</main>

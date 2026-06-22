@@ -257,6 +257,24 @@ export async function getConversations(): Promise<Conversation[]> {
 
   if (conversationIds.length === 0) return [];
 
+  const { data: latestMessages, error: latestMessagesError } = await supabase
+    .from("messages")
+    .select("conversation_id, sender_id, message, created_at")
+    .in("conversation_id", conversationIds)
+    .order("created_at", { ascending: false });
+
+  if (latestMessagesError) throw latestMessagesError;
+
+  const lastMessageByConversation = new Map<string, { sender_id: string | null; message: string | null }>();
+  for (const message of latestMessages ?? []) {
+    if (!lastMessageByConversation.has(message.conversation_id)) {
+      lastMessageByConversation.set(message.conversation_id, {
+        sender_id: message.sender_id,
+        message: message.message,
+      });
+    }
+  }
+
   // Step 2: every member row (any user) for those conversations, so we
   // can find "the other person" in each one. One query for all of them.
   const { data: allMembers, error: membersError } = await supabase
@@ -299,6 +317,7 @@ export async function getConversations(): Promise<Conversation[]> {
         id: conversation.id,
         created_at: conversation.created_at ?? new Date().toISOString(),
         last_message: conversation.last_message,
+        last_message_sender_id: lastMessageByConversation.get(conversation.id)?.sender_id ?? null,
         last_message_at: conversation.last_message_at,
         otherUser,
         unreadCount: unreadCounts[conversation.id] ?? 0,
@@ -428,7 +447,8 @@ export async function getMessages(
 export async function sendMessage(
   conversation: string,
   body: string,
-  kind = "text"
+  kind = "text",
+  replyTo?: string | null
 ) {
   const { data, error } = await supabase.rpc(
     "send_message",
@@ -436,6 +456,7 @@ export async function sendMessage(
       conversation,
       body,
       kind,
+      p_reply_to: replyTo ?? null,   // matches renamed SQL parameter
     }
   );
 

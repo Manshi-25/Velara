@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { OnlineBadge } from "./OnlineBadge";
+import { useIsUserOnline } from "@/hooks/usePresence";
 import type { Profile } from "@/types/chat";
 
 interface ChatHeaderProps {
@@ -15,11 +16,9 @@ interface ChatHeaderProps {
  * status line. Mirrors the header in the reference screenshot (Image 2).
  */
 export function ChatHeader({ otherUser, isTyping }: ChatHeaderProps) {
-  const statusText = isTyping
-    ? "typing…"
-    : otherUser.state === "online"
-      ? "Online"
-      : "Offline";
+  const online = useIsUserOnline(otherUser.id);
+
+  const statusText = isTyping ? "typing…" : online ? "Online" : "Offline";
 
   return (
     <header className="flex items-center gap-3 pb-4 border-b border-border/60">
@@ -34,7 +33,7 @@ export function ChatHeader({ otherUser, isTyping }: ChatHeaderProps) {
             {otherUser.anonymous_name?.[0]?.toUpperCase() ?? "?"}
           </AvatarFallback>
         </Avatar>
-        <OnlineBadge state={otherUser.state} />
+        <OnlineBadge online={online} />
       </div>
 
       <div className="flex-1 min-w-0">

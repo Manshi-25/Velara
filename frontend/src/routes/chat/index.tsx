@@ -10,6 +10,7 @@ import { SearchBar } from "@/components/chat/SearchBar";
 import { useChat } from "@/hooks/useChat";
 import { useOutgoingRequests } from "@/hooks/useOutgoingRequests";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/chat/")({
   validateSearch: (search) => ({
@@ -28,6 +29,7 @@ export const Route = createFileRoute("/chat/")({
 function ChatList() {
   const { tab: initialTab } = useSearch({ from: "/chat/" });
   const { conversations, requests, isLoading, error, accept, reject } = useChat();
+  const { user } = useAuth();
   const { outgoingRequests, isLoading: outgoingLoading } = useOutgoingRequests();
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState<"all" | "requests">(initialTab ?? "all");
@@ -44,6 +46,22 @@ function ChatList() {
     );
   }, [conversations, search]);
 
+  const filteredRequests = useMemo(() => {
+    if (!search.trim()) return requests;
+    const q = search.trim().toLowerCase();
+    return requests.filter((r) =>
+      r.sender?.anonymous_name?.toLowerCase().includes(q)
+    );
+  }, [requests, search]);
+
+  const filteredOutgoingRequests = useMemo(() => {
+    if (!search.trim()) return outgoingRequests;
+    const q = search.trim().toLowerCase();
+    return outgoingRequests.filter((r) =>
+      r.receiver?.anonymous_name?.toLowerCase().includes(q)
+    );
+  }, [outgoingRequests, search]);
+
   const totalRequestCount = requests.length + outgoingRequests.length;
 
   return (
@@ -58,17 +76,21 @@ function ChatList() {
       </header>
 
       <div className="max-w-2xl mx-auto space-y-4">
-        <SearchBar value={search} onChange={setSearch} />
+        <SearchBar
+          value={search}
+          onChange={setSearch}
+          placeholder={tab === "requests" ? "Search requests…" : "Search messages…"}
+        />
 
         <Tabs value={tab} onValueChange={(v) => setTab(v as "all" | "requests")} className="w-full">
           <TabsList className="grid grid-cols-2 w-full h-11 rounded-full bg-surface p-1">
-            <TabsTrigger value="all" className="rounded-full data-[state=active]:gradient-violet data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="all" className="rounded-full data-[state=active]:bg-transparent! data-[state=active]:gradient-violet data-[state=active]:text-primary-foreground!">
               All messages
             </TabsTrigger>
-            <TabsTrigger value="requests" className="rounded-full data-[state=active]:gradient-violet data-[state=active]:text-primary-foreground relative">
+            <TabsTrigger value="requests" className="rounded-full data-[state=active]:bg-transparent! data-[state=active]:gradient-violet data-[state=active]:text-primary-foreground! relative">
               Requests
               {totalRequestCount > 0 && (
-                <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-nightmare text-white text-[10px] font-semibold">
+                <span className="ml-1.5 inline-flex items-center justify-center min-w-4.5 h-4.5 px-1 rounded-full bg-nightmare text-white text-[10px] font-semibold">
                   {totalRequestCount}
                 </span>
               )}
@@ -95,7 +117,7 @@ function ChatList() {
 
             <div className="bg-card border border-border/60 rounded-2xl overflow-hidden">
               {filteredConversations.map((conversation) => (
-                <ChatCard key={conversation.id} conversation={conversation} />
+                <ChatCard key={conversation.id} conversation={conversation} currentUserId={user?.id ?? null} />
               ))}
             </div>
           </TabsContent>
@@ -103,7 +125,7 @@ function ChatList() {
           <TabsContent value="requests" className="mt-4 space-y-6">
             {/* Incoming — requests sent TO me, need a response */}
             <div className="space-y-2">
-              {(requests.length > 0 || isLoading) && (
+              {(filteredRequests.length > 0 || isLoading) && (
                 <h3 className="text-xs font-medium text-muted-foreground px-1 uppercase tracking-wide">
                   Incoming
                 </h3>
@@ -113,7 +135,7 @@ function ChatList() {
                 <p className="text-center text-sm text-muted-foreground py-6">Loading requests…</p>
               )}
 
-              {requests.map((request) => (
+              {filteredRequests.map((request) => (
                 <RequestCard
                   key={request.id}
                   request={request}
@@ -124,12 +146,12 @@ function ChatList() {
             </div>
 
             {/* Outgoing — requests I sent, waiting on them */}
-            {outgoingRequests.length > 0 && (
+            {filteredOutgoingRequests.length > 0 && (
               <div className="space-y-2">
                 <h3 className="text-xs font-medium text-muted-foreground px-1 uppercase tracking-wide">
                   Sent
                 </h3>
-                {outgoingRequests.map((request) => (
+                {filteredOutgoingRequests.map((request) => (
                   <div
                     key={request.id}
                     className="flex items-center gap-3 px-4 py-3 rounded-2xl border border-border/40 bg-card/50"
@@ -155,10 +177,10 @@ function ChatList() {
               </div>
             )}
 
-            {!isLoading && !outgoingLoading && requests.length === 0 && outgoingRequests.length === 0 && (
+            {!isLoading && !outgoingLoading && filteredRequests.length === 0 && filteredOutgoingRequests.length === 0 && (
               <div className="text-center py-16 text-muted-foreground">
                 <MessageCircle className="h-10 w-10 mx-auto mb-3 opacity-50" />
-                <p>No pending requests.</p>
+                <p>{search ? "No requests match your search." : "No pending requests."}</p>
               </div>
             )}
           </TabsContent>

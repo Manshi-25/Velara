@@ -4,6 +4,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { Input } from "@/components/ui/input";
 import { Search as SearchIcon, Eye, Heart } from "lucide-react";
 import { dreams } from "@/lib/mock-data";
+import { BackButton } from "@/components/BackButton";
 
 export const Route = createFileRoute("/search")({
   head: () => ({
@@ -35,6 +36,7 @@ function SearchPage() {
 
   return (
     <AppLayout>
+      <BackButton/>
       <div className="relative mb-6 max-w-2xl mx-auto">
         <SearchIcon className="h-4 w-4 absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
         <Input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search dreams…" className="pl-11 h-12 rounded-full bg-card border-border/60" />
