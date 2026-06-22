@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { generateDreamImage } from "@/lib/randomDreamImage";
+import { ChatActionButton } from "@/components/chat/ChatActionButton";
 
 type ProfileLayoutProps = {
   profile: any;
@@ -10,7 +11,6 @@ type ProfileLayoutProps = {
 
   onEdit?: () => void;
   onFollow?: () => void;
-  onChat?: () => void;
 
   isFollowing?: boolean;
 
@@ -29,7 +29,6 @@ export function ProfileLayout({
 
   onEdit,
   onFollow,
-  onChat,
   isFollowing = false,
 
   followersCount,
@@ -100,9 +99,7 @@ export function ProfileLayout({
               <Button onClick={onFollow}>
                 {isFollowing ? "Echoing" : "Echo"}
               </Button>
-              <Button variant="outline" onClick={onChat}>
-                Chat
-              </Button>
+              <ChatActionButton userId={profile.id} />
             </div> 
           )}
 

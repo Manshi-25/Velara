@@ -31,11 +31,16 @@ export interface ChatRequest {
 
   status: RequestStatus;
 
+  conversation_id: string;
+
   created_at: string;
   updated_at: string | null;
 
   sender?: Profile;
   receiver?: Profile;
+
+  /** The first message sent along with this request — fetched separately, used as a preview. */
+  firstMessage?: string;
 }
 
 export interface Conversation {
@@ -92,3 +97,18 @@ export interface Message {
 
   sender?: Profile;
 }
+
+/**
+ * The relationship between the current user and another user, used to
+ * decide what the Chat/Requested/Message button should show:
+ *   - "none"     -> show "Chat" (no request exists yet)
+ *   - "pending_outgoing" -> show "Requested" (I sent a request, waiting)
+ *   - "pending_incoming" -> they sent ME a request (rare on a profile
+ *                            view, but handled — points them to Requests tab)
+ *   - "accepted" -> show "Message" (conversation is live), includes conversationId
+ */
+export type ChatRelationship =
+  | { status: "none" }
+  | { status: "pending_outgoing"; requestId: string }
+  | { status: "pending_incoming"; requestId: string }
+  | { status: "accepted"; conversationId: string };

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Heart, MessageCircle, Eye, Bookmark, Share2, Send, Moon, Quote, UserPlus, Sparkles, Languages, Reply, MoreHorizontal } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { ChatActionButton } from "@/components/chat/ChatActionButton";
 export const Route = createFileRoute("/dream/$id")({
   component: DreamDetail,
 });
@@ -511,9 +512,12 @@ function DreamDetail() {
             </div>
           </div>
           {currentUserId && currentUserId !== dream.user_id && (
-            <Button onClick={toggleFollow} className="rounded-full bg-[#cc8443] hover:bg-[#b57337] text-black text-xs sm:text-sm shrink-0 font-medium transition shadow-[0_0_15px_rgba(204,132,67,0.15)]">
-               <UserPlus className="h-4 w-4 mr-2" /> {isFollowing ? "Echoing" : "Echo"}
-            </Button>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button onClick={toggleFollow} className="rounded-full bg-[#cc8443] hover:bg-[#b57337] text-black text-xs sm:text-sm font-medium transition shadow-[0_0_15px_rgba(204,132,67,0.15)]">
+                 <UserPlus className="h-4 w-4 mr-2" /> {isFollowing ? "Echoing" : "Echo"}
+              </Button>
+              <ChatActionButton userId={dream.user_id} />
+            </div>
           )}
         </div>
 

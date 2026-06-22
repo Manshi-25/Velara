@@ -16,11 +16,11 @@ import { Route as PostRouteImport } from './routes/post'
 import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as DashboardRouteImport } from './routes/dashboard'
-import { Route as ChatRouteImport } from './routes/chat'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SettingsIndexRouteImport } from './routes/settings.index'
+import { Route as ChatIndexRouteImport } from './routes/chat/index'
 import { Route as UserUsernameRouteImport } from './routes/user.$username'
 import { Route as SettingsSavedRouteImport } from './routes/settings.saved'
 import { Route as SettingsReactionsRouteImport } from './routes/settings.reactions'
@@ -29,10 +29,12 @@ import { Route as SettingsCommentsRouteImport } from './routes/settings.comments
 import { Route as SettingsArchiveRouteImport } from './routes/settings.archive'
 import { Route as ProfileIdRouteImport } from './routes/profile.$id'
 import { Route as DreamIdRouteImport } from './routes/dream.$id'
-import { Route as ChatIdRouteImport } from './routes/chat.$id'
+import { Route as ChatRequestsRouteImport } from './routes/chat/requests'
+import { Route as ChatConversationIdRouteImport } from './routes/chat/$conversationId'
 import { Route as SettingsArchiveIndexRouteImport } from './routes/settings.archive.index'
 import { Route as SettingsArchiveDreamsRouteImport } from './routes/settings.archive.dreams'
 import { Route as SettingsArchiveDraftsRouteImport } from './routes/settings.archive.drafts'
+import { Route as ChatNewUserIdRouteImport } from './routes/chat/new.$userId'
 
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
@@ -69,11 +71,6 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ChatRoute = ChatRouteImport.update({
-  id: '/chat',
-  path: '/chat',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -93,6 +90,11 @@ const SettingsIndexRoute = SettingsIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => SettingsRoute,
+} as any)
+const ChatIndexRoute = ChatIndexRouteImport.update({
+  id: '/chat/',
+  path: '/chat/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const UserUsernameRoute = UserUsernameRouteImport.update({
   id: '/user/$username',
@@ -134,10 +136,15 @@ const DreamIdRoute = DreamIdRouteImport.update({
   path: '/dream/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ChatIdRoute = ChatIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => ChatRoute,
+const ChatRequestsRoute = ChatRequestsRouteImport.update({
+  id: '/chat/requests',
+  path: '/chat/requests',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChatConversationIdRoute = ChatConversationIdRouteImport.update({
+  id: '/chat/$conversationId',
+  path: '/chat/$conversationId',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsArchiveIndexRoute = SettingsArchiveIndexRouteImport.update({
   id: '/',
@@ -154,12 +161,16 @@ const SettingsArchiveDraftsRoute = SettingsArchiveDraftsRouteImport.update({
   path: '/drafts',
   getParentRoute: () => SettingsArchiveRoute,
 } as any)
+const ChatNewUserIdRoute = ChatNewUserIdRouteImport.update({
+  id: '/chat/new/$userId',
+  path: '/chat/new/$userId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
   '/auth': typeof AuthRoute
-  '/chat': typeof ChatRouteWithChildren
   '/dashboard': typeof DashboardRoute
   '/explore': typeof ExploreRoute
   '/notifications': typeof NotificationsRoute
@@ -167,7 +178,8 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRouteWithChildren
-  '/chat/$id': typeof ChatIdRoute
+  '/chat/$conversationId': typeof ChatConversationIdRoute
+  '/chat/requests': typeof ChatRequestsRoute
   '/dream/$id': typeof DreamIdRoute
   '/profile/$id': typeof ProfileIdRoute
   '/settings/archive': typeof SettingsArchiveRouteWithChildren
@@ -176,7 +188,9 @@ export interface FileRoutesByFullPath {
   '/settings/reactions': typeof SettingsReactionsRoute
   '/settings/saved': typeof SettingsSavedRoute
   '/user/$username': typeof UserUsernameRoute
+  '/chat/': typeof ChatIndexRoute
   '/settings/': typeof SettingsIndexRoute
+  '/chat/new/$userId': typeof ChatNewUserIdRoute
   '/settings/archive/drafts': typeof SettingsArchiveDraftsRoute
   '/settings/archive/dreams': typeof SettingsArchiveDreamsRoute
   '/settings/archive/': typeof SettingsArchiveIndexRoute
@@ -185,14 +199,14 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
   '/auth': typeof AuthRoute
-  '/chat': typeof ChatRouteWithChildren
   '/dashboard': typeof DashboardRoute
   '/explore': typeof ExploreRoute
   '/notifications': typeof NotificationsRoute
   '/post': typeof PostRoute
   '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
-  '/chat/$id': typeof ChatIdRoute
+  '/chat/$conversationId': typeof ChatConversationIdRoute
+  '/chat/requests': typeof ChatRequestsRoute
   '/dream/$id': typeof DreamIdRoute
   '/profile/$id': typeof ProfileIdRoute
   '/settings/comments': typeof SettingsCommentsRoute
@@ -200,7 +214,9 @@ export interface FileRoutesByTo {
   '/settings/reactions': typeof SettingsReactionsRoute
   '/settings/saved': typeof SettingsSavedRoute
   '/user/$username': typeof UserUsernameRoute
+  '/chat': typeof ChatIndexRoute
   '/settings': typeof SettingsIndexRoute
+  '/chat/new/$userId': typeof ChatNewUserIdRoute
   '/settings/archive/drafts': typeof SettingsArchiveDraftsRoute
   '/settings/archive/dreams': typeof SettingsArchiveDreamsRoute
   '/settings/archive': typeof SettingsArchiveIndexRoute
@@ -210,7 +226,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
   '/auth': typeof AuthRoute
-  '/chat': typeof ChatRouteWithChildren
   '/dashboard': typeof DashboardRoute
   '/explore': typeof ExploreRoute
   '/notifications': typeof NotificationsRoute
@@ -218,7 +233,8 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRouteWithChildren
-  '/chat/$id': typeof ChatIdRoute
+  '/chat/$conversationId': typeof ChatConversationIdRoute
+  '/chat/requests': typeof ChatRequestsRoute
   '/dream/$id': typeof DreamIdRoute
   '/profile/$id': typeof ProfileIdRoute
   '/settings/archive': typeof SettingsArchiveRouteWithChildren
@@ -227,7 +243,9 @@ export interface FileRoutesById {
   '/settings/reactions': typeof SettingsReactionsRoute
   '/settings/saved': typeof SettingsSavedRoute
   '/user/$username': typeof UserUsernameRoute
+  '/chat/': typeof ChatIndexRoute
   '/settings/': typeof SettingsIndexRoute
+  '/chat/new/$userId': typeof ChatNewUserIdRoute
   '/settings/archive/drafts': typeof SettingsArchiveDraftsRoute
   '/settings/archive/dreams': typeof SettingsArchiveDreamsRoute
   '/settings/archive/': typeof SettingsArchiveIndexRoute
@@ -238,7 +256,6 @@ export interface FileRouteTypes {
     | '/'
     | '/account'
     | '/auth'
-    | '/chat'
     | '/dashboard'
     | '/explore'
     | '/notifications'
@@ -246,7 +263,8 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/search'
     | '/settings'
-    | '/chat/$id'
+    | '/chat/$conversationId'
+    | '/chat/requests'
     | '/dream/$id'
     | '/profile/$id'
     | '/settings/archive'
@@ -255,7 +273,9 @@ export interface FileRouteTypes {
     | '/settings/reactions'
     | '/settings/saved'
     | '/user/$username'
+    | '/chat/'
     | '/settings/'
+    | '/chat/new/$userId'
     | '/settings/archive/drafts'
     | '/settings/archive/dreams'
     | '/settings/archive/'
@@ -264,14 +284,14 @@ export interface FileRouteTypes {
     | '/'
     | '/account'
     | '/auth'
-    | '/chat'
     | '/dashboard'
     | '/explore'
     | '/notifications'
     | '/post'
     | '/reset-password'
     | '/search'
-    | '/chat/$id'
+    | '/chat/$conversationId'
+    | '/chat/requests'
     | '/dream/$id'
     | '/profile/$id'
     | '/settings/comments'
@@ -279,7 +299,9 @@ export interface FileRouteTypes {
     | '/settings/reactions'
     | '/settings/saved'
     | '/user/$username'
+    | '/chat'
     | '/settings'
+    | '/chat/new/$userId'
     | '/settings/archive/drafts'
     | '/settings/archive/dreams'
     | '/settings/archive'
@@ -288,7 +310,6 @@ export interface FileRouteTypes {
     | '/'
     | '/account'
     | '/auth'
-    | '/chat'
     | '/dashboard'
     | '/explore'
     | '/notifications'
@@ -296,7 +317,8 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/search'
     | '/settings'
-    | '/chat/$id'
+    | '/chat/$conversationId'
+    | '/chat/requests'
     | '/dream/$id'
     | '/profile/$id'
     | '/settings/archive'
@@ -305,7 +327,9 @@ export interface FileRouteTypes {
     | '/settings/reactions'
     | '/settings/saved'
     | '/user/$username'
+    | '/chat/'
     | '/settings/'
+    | '/chat/new/$userId'
     | '/settings/archive/drafts'
     | '/settings/archive/dreams'
     | '/settings/archive/'
@@ -315,7 +339,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccountRoute: typeof AccountRoute
   AuthRoute: typeof AuthRoute
-  ChatRoute: typeof ChatRouteWithChildren
   DashboardRoute: typeof DashboardRoute
   ExploreRoute: typeof ExploreRoute
   NotificationsRoute: typeof NotificationsRoute
@@ -323,9 +346,13 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SearchRoute: typeof SearchRoute
   SettingsRoute: typeof SettingsRouteWithChildren
+  ChatConversationIdRoute: typeof ChatConversationIdRoute
+  ChatRequestsRoute: typeof ChatRequestsRoute
   DreamIdRoute: typeof DreamIdRoute
   ProfileIdRoute: typeof ProfileIdRoute
   UserUsernameRoute: typeof UserUsernameRoute
+  ChatIndexRoute: typeof ChatIndexRoute
+  ChatNewUserIdRoute: typeof ChatNewUserIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -379,13 +406,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/chat': {
-      id: '/chat'
-      path: '/chat'
-      fullPath: '/chat'
-      preLoaderRoute: typeof ChatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -413,6 +433,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/settings/'
       preLoaderRoute: typeof SettingsIndexRouteImport
       parentRoute: typeof SettingsRoute
+    }
+    '/chat/': {
+      id: '/chat/'
+      path: '/chat'
+      fullPath: '/chat/'
+      preLoaderRoute: typeof ChatIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/user/$username': {
       id: '/user/$username'
@@ -470,12 +497,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DreamIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/chat/$id': {
-      id: '/chat/$id'
-      path: '/$id'
-      fullPath: '/chat/$id'
-      preLoaderRoute: typeof ChatIdRouteImport
-      parentRoute: typeof ChatRoute
+    '/chat/requests': {
+      id: '/chat/requests'
+      path: '/chat/requests'
+      fullPath: '/chat/requests'
+      preLoaderRoute: typeof ChatRequestsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/chat/$conversationId': {
+      id: '/chat/$conversationId'
+      path: '/chat/$conversationId'
+      fullPath: '/chat/$conversationId'
+      preLoaderRoute: typeof ChatConversationIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/settings/archive/': {
       id: '/settings/archive/'
@@ -498,18 +532,15 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsArchiveDraftsRouteImport
       parentRoute: typeof SettingsArchiveRoute
     }
+    '/chat/new/$userId': {
+      id: '/chat/new/$userId'
+      path: '/chat/new/$userId'
+      fullPath: '/chat/new/$userId'
+      preLoaderRoute: typeof ChatNewUserIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
-
-interface ChatRouteChildren {
-  ChatIdRoute: typeof ChatIdRoute
-}
-
-const ChatRouteChildren: ChatRouteChildren = {
-  ChatIdRoute: ChatIdRoute,
-}
-
-const ChatRouteWithChildren = ChatRoute._addFileChildren(ChatRouteChildren)
 
 interface SettingsArchiveRouteChildren {
   SettingsArchiveDraftsRoute: typeof SettingsArchiveDraftsRoute
@@ -553,7 +584,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountRoute: AccountRoute,
   AuthRoute: AuthRoute,
-  ChatRoute: ChatRouteWithChildren,
   DashboardRoute: DashboardRoute,
   ExploreRoute: ExploreRoute,
   NotificationsRoute: NotificationsRoute,
@@ -561,9 +591,13 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SearchRoute: SearchRoute,
   SettingsRoute: SettingsRouteWithChildren,
+  ChatConversationIdRoute: ChatConversationIdRoute,
+  ChatRequestsRoute: ChatRequestsRoute,
   DreamIdRoute: DreamIdRoute,
   ProfileIdRoute: ProfileIdRoute,
   UserUsernameRoute: UserUsernameRoute,
+  ChatIndexRoute: ChatIndexRoute,
+  ChatNewUserIdRoute: ChatNewUserIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

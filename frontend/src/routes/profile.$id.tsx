@@ -237,11 +237,6 @@ function UserProfile() {
       profile={profile}
       posts={posts}
       isOwnProfile={isOwnProfile}
-      onChat={() =>
-        navigate({
-          to: "/chat/$id",
-          params: {id: profile.id,},}
-        )}
       isFollowing={isFollowing}
       onFollow={() => toggleFollowUser(profile.id)}
       onFollowersClick={() => {
