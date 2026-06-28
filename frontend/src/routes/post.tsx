@@ -274,10 +274,9 @@ function Post() {
   }
 
   return (
-    <AppLayout>
-      <div className="max-w-3xl mx-auto">
-        <BackButton className="mb-4" />
-
+    <AppLayout> 
+      <BackButton className="mb-4" />
+      <div className="max-w-5xl mx-auto">
         <div className="mb-6">
           <h2 className="font-display text-2xl sm:text-3xl">
             Post a dream

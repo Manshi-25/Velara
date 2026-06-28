@@ -36,7 +36,7 @@ export function useExploreDreams() {
         type,
         views_count,
         likes_count,
-        author:profiles!dreams_user_id_fkey(
+        author:profiles!dreams_user_id_profiles_fkey(
           id,
           anonymous_name
         )

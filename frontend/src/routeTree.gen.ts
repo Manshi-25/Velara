@@ -24,9 +24,13 @@ import { Route as ChatIndexRouteImport } from './routes/chat/index'
 import { Route as UserUsernameRouteImport } from './routes/user.$username'
 import { Route as SettingsSavedRouteImport } from './routes/settings.saved'
 import { Route as SettingsReactionsRouteImport } from './routes/settings.reactions'
+import { Route as SettingsPrivacyRouteImport } from './routes/settings.privacy'
+import { Route as SettingsNotificationsRouteImport } from './routes/settings.notifications'
 import { Route as SettingsLikesRouteImport } from './routes/settings.likes'
+import { Route as SettingsDangerRouteImport } from './routes/settings.danger'
 import { Route as SettingsCommentsRouteImport } from './routes/settings.comments'
 import { Route as SettingsArchiveRouteImport } from './routes/settings.archive'
+import { Route as SettingsAppearanceRouteImport } from './routes/settings.appearance'
 import { Route as ProfileIdRouteImport } from './routes/profile.$id'
 import { Route as DreamIdRouteImport } from './routes/dream.$id'
 import { Route as ChatRequestsRouteImport } from './routes/chat/requests'
@@ -34,6 +38,10 @@ import { Route as ChatConversationIdRouteImport } from './routes/chat/$conversat
 import { Route as SettingsArchiveIndexRouteImport } from './routes/settings.archive.index'
 import { Route as SettingsArchiveDreamsRouteImport } from './routes/settings.archive.dreams'
 import { Route as SettingsArchiveDraftsRouteImport } from './routes/settings.archive.drafts'
+import { Route as SettingsAccountStatsRouteImport } from './routes/settings.account.stats'
+import { Route as SettingsAccountSecurityRouteImport } from './routes/settings.account.security'
+import { Route as SettingsAccountProfileRouteImport } from './routes/settings.account.profile'
+import { Route as SettingsAccountDataRouteImport } from './routes/settings.account.data'
 import { Route as ChatNewUserIdRouteImport } from './routes/chat/new.$userId'
 
 const SettingsRoute = SettingsRouteImport.update({
@@ -111,9 +119,24 @@ const SettingsReactionsRoute = SettingsReactionsRouteImport.update({
   path: '/reactions',
   getParentRoute: () => SettingsRoute,
 } as any)
+const SettingsPrivacyRoute = SettingsPrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => SettingsRoute,
+} as any)
+const SettingsNotificationsRoute = SettingsNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => SettingsRoute,
+} as any)
 const SettingsLikesRoute = SettingsLikesRouteImport.update({
   id: '/likes',
   path: '/likes',
+  getParentRoute: () => SettingsRoute,
+} as any)
+const SettingsDangerRoute = SettingsDangerRouteImport.update({
+  id: '/danger',
+  path: '/danger',
   getParentRoute: () => SettingsRoute,
 } as any)
 const SettingsCommentsRoute = SettingsCommentsRouteImport.update({
@@ -124,6 +147,11 @@ const SettingsCommentsRoute = SettingsCommentsRouteImport.update({
 const SettingsArchiveRoute = SettingsArchiveRouteImport.update({
   id: '/archive',
   path: '/archive',
+  getParentRoute: () => SettingsRoute,
+} as any)
+const SettingsAppearanceRoute = SettingsAppearanceRouteImport.update({
+  id: '/appearance',
+  path: '/appearance',
   getParentRoute: () => SettingsRoute,
 } as any)
 const ProfileIdRoute = ProfileIdRouteImport.update({
@@ -161,6 +189,26 @@ const SettingsArchiveDraftsRoute = SettingsArchiveDraftsRouteImport.update({
   path: '/drafts',
   getParentRoute: () => SettingsArchiveRoute,
 } as any)
+const SettingsAccountStatsRoute = SettingsAccountStatsRouteImport.update({
+  id: '/account/stats',
+  path: '/account/stats',
+  getParentRoute: () => SettingsRoute,
+} as any)
+const SettingsAccountSecurityRoute = SettingsAccountSecurityRouteImport.update({
+  id: '/account/security',
+  path: '/account/security',
+  getParentRoute: () => SettingsRoute,
+} as any)
+const SettingsAccountProfileRoute = SettingsAccountProfileRouteImport.update({
+  id: '/account/profile',
+  path: '/account/profile',
+  getParentRoute: () => SettingsRoute,
+} as any)
+const SettingsAccountDataRoute = SettingsAccountDataRouteImport.update({
+  id: '/account/data',
+  path: '/account/data',
+  getParentRoute: () => SettingsRoute,
+} as any)
 const ChatNewUserIdRoute = ChatNewUserIdRouteImport.update({
   id: '/chat/new/$userId',
   path: '/chat/new/$userId',
@@ -182,15 +230,23 @@ export interface FileRoutesByFullPath {
   '/chat/requests': typeof ChatRequestsRoute
   '/dream/$id': typeof DreamIdRoute
   '/profile/$id': typeof ProfileIdRoute
+  '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/archive': typeof SettingsArchiveRouteWithChildren
   '/settings/comments': typeof SettingsCommentsRoute
+  '/settings/danger': typeof SettingsDangerRoute
   '/settings/likes': typeof SettingsLikesRoute
+  '/settings/notifications': typeof SettingsNotificationsRoute
+  '/settings/privacy': typeof SettingsPrivacyRoute
   '/settings/reactions': typeof SettingsReactionsRoute
   '/settings/saved': typeof SettingsSavedRoute
   '/user/$username': typeof UserUsernameRoute
   '/chat/': typeof ChatIndexRoute
   '/settings/': typeof SettingsIndexRoute
   '/chat/new/$userId': typeof ChatNewUserIdRoute
+  '/settings/account/data': typeof SettingsAccountDataRoute
+  '/settings/account/profile': typeof SettingsAccountProfileRoute
+  '/settings/account/security': typeof SettingsAccountSecurityRoute
+  '/settings/account/stats': typeof SettingsAccountStatsRoute
   '/settings/archive/drafts': typeof SettingsArchiveDraftsRoute
   '/settings/archive/dreams': typeof SettingsArchiveDreamsRoute
   '/settings/archive/': typeof SettingsArchiveIndexRoute
@@ -209,14 +265,22 @@ export interface FileRoutesByTo {
   '/chat/requests': typeof ChatRequestsRoute
   '/dream/$id': typeof DreamIdRoute
   '/profile/$id': typeof ProfileIdRoute
+  '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/comments': typeof SettingsCommentsRoute
+  '/settings/danger': typeof SettingsDangerRoute
   '/settings/likes': typeof SettingsLikesRoute
+  '/settings/notifications': typeof SettingsNotificationsRoute
+  '/settings/privacy': typeof SettingsPrivacyRoute
   '/settings/reactions': typeof SettingsReactionsRoute
   '/settings/saved': typeof SettingsSavedRoute
   '/user/$username': typeof UserUsernameRoute
   '/chat': typeof ChatIndexRoute
   '/settings': typeof SettingsIndexRoute
   '/chat/new/$userId': typeof ChatNewUserIdRoute
+  '/settings/account/data': typeof SettingsAccountDataRoute
+  '/settings/account/profile': typeof SettingsAccountProfileRoute
+  '/settings/account/security': typeof SettingsAccountSecurityRoute
+  '/settings/account/stats': typeof SettingsAccountStatsRoute
   '/settings/archive/drafts': typeof SettingsArchiveDraftsRoute
   '/settings/archive/dreams': typeof SettingsArchiveDreamsRoute
   '/settings/archive': typeof SettingsArchiveIndexRoute
@@ -237,15 +301,23 @@ export interface FileRoutesById {
   '/chat/requests': typeof ChatRequestsRoute
   '/dream/$id': typeof DreamIdRoute
   '/profile/$id': typeof ProfileIdRoute
+  '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/archive': typeof SettingsArchiveRouteWithChildren
   '/settings/comments': typeof SettingsCommentsRoute
+  '/settings/danger': typeof SettingsDangerRoute
   '/settings/likes': typeof SettingsLikesRoute
+  '/settings/notifications': typeof SettingsNotificationsRoute
+  '/settings/privacy': typeof SettingsPrivacyRoute
   '/settings/reactions': typeof SettingsReactionsRoute
   '/settings/saved': typeof SettingsSavedRoute
   '/user/$username': typeof UserUsernameRoute
   '/chat/': typeof ChatIndexRoute
   '/settings/': typeof SettingsIndexRoute
   '/chat/new/$userId': typeof ChatNewUserIdRoute
+  '/settings/account/data': typeof SettingsAccountDataRoute
+  '/settings/account/profile': typeof SettingsAccountProfileRoute
+  '/settings/account/security': typeof SettingsAccountSecurityRoute
+  '/settings/account/stats': typeof SettingsAccountStatsRoute
   '/settings/archive/drafts': typeof SettingsArchiveDraftsRoute
   '/settings/archive/dreams': typeof SettingsArchiveDreamsRoute
   '/settings/archive/': typeof SettingsArchiveIndexRoute
@@ -267,15 +339,23 @@ export interface FileRouteTypes {
     | '/chat/requests'
     | '/dream/$id'
     | '/profile/$id'
+    | '/settings/appearance'
     | '/settings/archive'
     | '/settings/comments'
+    | '/settings/danger'
     | '/settings/likes'
+    | '/settings/notifications'
+    | '/settings/privacy'
     | '/settings/reactions'
     | '/settings/saved'
     | '/user/$username'
     | '/chat/'
     | '/settings/'
     | '/chat/new/$userId'
+    | '/settings/account/data'
+    | '/settings/account/profile'
+    | '/settings/account/security'
+    | '/settings/account/stats'
     | '/settings/archive/drafts'
     | '/settings/archive/dreams'
     | '/settings/archive/'
@@ -294,14 +374,22 @@ export interface FileRouteTypes {
     | '/chat/requests'
     | '/dream/$id'
     | '/profile/$id'
+    | '/settings/appearance'
     | '/settings/comments'
+    | '/settings/danger'
     | '/settings/likes'
+    | '/settings/notifications'
+    | '/settings/privacy'
     | '/settings/reactions'
     | '/settings/saved'
     | '/user/$username'
     | '/chat'
     | '/settings'
     | '/chat/new/$userId'
+    | '/settings/account/data'
+    | '/settings/account/profile'
+    | '/settings/account/security'
+    | '/settings/account/stats'
     | '/settings/archive/drafts'
     | '/settings/archive/dreams'
     | '/settings/archive'
@@ -321,15 +409,23 @@ export interface FileRouteTypes {
     | '/chat/requests'
     | '/dream/$id'
     | '/profile/$id'
+    | '/settings/appearance'
     | '/settings/archive'
     | '/settings/comments'
+    | '/settings/danger'
     | '/settings/likes'
+    | '/settings/notifications'
+    | '/settings/privacy'
     | '/settings/reactions'
     | '/settings/saved'
     | '/user/$username'
     | '/chat/'
     | '/settings/'
     | '/chat/new/$userId'
+    | '/settings/account/data'
+    | '/settings/account/profile'
+    | '/settings/account/security'
+    | '/settings/account/stats'
     | '/settings/archive/drafts'
     | '/settings/archive/dreams'
     | '/settings/archive/'
@@ -462,11 +558,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsReactionsRouteImport
       parentRoute: typeof SettingsRoute
     }
+    '/settings/privacy': {
+      id: '/settings/privacy'
+      path: '/privacy'
+      fullPath: '/settings/privacy'
+      preLoaderRoute: typeof SettingsPrivacyRouteImport
+      parentRoute: typeof SettingsRoute
+    }
+    '/settings/notifications': {
+      id: '/settings/notifications'
+      path: '/notifications'
+      fullPath: '/settings/notifications'
+      preLoaderRoute: typeof SettingsNotificationsRouteImport
+      parentRoute: typeof SettingsRoute
+    }
     '/settings/likes': {
       id: '/settings/likes'
       path: '/likes'
       fullPath: '/settings/likes'
       preLoaderRoute: typeof SettingsLikesRouteImport
+      parentRoute: typeof SettingsRoute
+    }
+    '/settings/danger': {
+      id: '/settings/danger'
+      path: '/danger'
+      fullPath: '/settings/danger'
+      preLoaderRoute: typeof SettingsDangerRouteImport
       parentRoute: typeof SettingsRoute
     }
     '/settings/comments': {
@@ -481,6 +598,13 @@ declare module '@tanstack/react-router' {
       path: '/archive'
       fullPath: '/settings/archive'
       preLoaderRoute: typeof SettingsArchiveRouteImport
+      parentRoute: typeof SettingsRoute
+    }
+    '/settings/appearance': {
+      id: '/settings/appearance'
+      path: '/appearance'
+      fullPath: '/settings/appearance'
+      preLoaderRoute: typeof SettingsAppearanceRouteImport
       parentRoute: typeof SettingsRoute
     }
     '/profile/$id': {
@@ -532,6 +656,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsArchiveDraftsRouteImport
       parentRoute: typeof SettingsArchiveRoute
     }
+    '/settings/account/stats': {
+      id: '/settings/account/stats'
+      path: '/account/stats'
+      fullPath: '/settings/account/stats'
+      preLoaderRoute: typeof SettingsAccountStatsRouteImport
+      parentRoute: typeof SettingsRoute
+    }
+    '/settings/account/security': {
+      id: '/settings/account/security'
+      path: '/account/security'
+      fullPath: '/settings/account/security'
+      preLoaderRoute: typeof SettingsAccountSecurityRouteImport
+      parentRoute: typeof SettingsRoute
+    }
+    '/settings/account/profile': {
+      id: '/settings/account/profile'
+      path: '/account/profile'
+      fullPath: '/settings/account/profile'
+      preLoaderRoute: typeof SettingsAccountProfileRouteImport
+      parentRoute: typeof SettingsRoute
+    }
+    '/settings/account/data': {
+      id: '/settings/account/data'
+      path: '/account/data'
+      fullPath: '/settings/account/data'
+      preLoaderRoute: typeof SettingsAccountDataRouteImport
+      parentRoute: typeof SettingsRoute
+    }
     '/chat/new/$userId': {
       id: '/chat/new/$userId'
       path: '/chat/new/$userId'
@@ -559,21 +711,37 @@ const SettingsArchiveRouteWithChildren = SettingsArchiveRoute._addFileChildren(
 )
 
 interface SettingsRouteChildren {
+  SettingsAppearanceRoute: typeof SettingsAppearanceRoute
   SettingsArchiveRoute: typeof SettingsArchiveRouteWithChildren
   SettingsCommentsRoute: typeof SettingsCommentsRoute
+  SettingsDangerRoute: typeof SettingsDangerRoute
   SettingsLikesRoute: typeof SettingsLikesRoute
+  SettingsNotificationsRoute: typeof SettingsNotificationsRoute
+  SettingsPrivacyRoute: typeof SettingsPrivacyRoute
   SettingsReactionsRoute: typeof SettingsReactionsRoute
   SettingsSavedRoute: typeof SettingsSavedRoute
   SettingsIndexRoute: typeof SettingsIndexRoute
+  SettingsAccountDataRoute: typeof SettingsAccountDataRoute
+  SettingsAccountProfileRoute: typeof SettingsAccountProfileRoute
+  SettingsAccountSecurityRoute: typeof SettingsAccountSecurityRoute
+  SettingsAccountStatsRoute: typeof SettingsAccountStatsRoute
 }
 
 const SettingsRouteChildren: SettingsRouteChildren = {
+  SettingsAppearanceRoute: SettingsAppearanceRoute,
   SettingsArchiveRoute: SettingsArchiveRouteWithChildren,
   SettingsCommentsRoute: SettingsCommentsRoute,
+  SettingsDangerRoute: SettingsDangerRoute,
   SettingsLikesRoute: SettingsLikesRoute,
+  SettingsNotificationsRoute: SettingsNotificationsRoute,
+  SettingsPrivacyRoute: SettingsPrivacyRoute,
   SettingsReactionsRoute: SettingsReactionsRoute,
   SettingsSavedRoute: SettingsSavedRoute,
   SettingsIndexRoute: SettingsIndexRoute,
+  SettingsAccountDataRoute: SettingsAccountDataRoute,
+  SettingsAccountProfileRoute: SettingsAccountProfileRoute,
+  SettingsAccountSecurityRoute: SettingsAccountSecurityRoute,
+  SettingsAccountStatsRoute: SettingsAccountStatsRoute,
 }
 
 const SettingsRouteWithChildren = SettingsRoute._addFileChildren(

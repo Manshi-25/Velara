@@ -1,3 +1,4 @@
+
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/AppLayout";
 import { Eye, Heart, MessageCircle, Users, Bell, Moon } from "lucide-react";
@@ -30,6 +31,26 @@ function Dashboard() {
   useEffect(() => {
     loadDashboard();
     loadUserXP();
+
+    // Realtime: update XP/level instantly when triggers fire
+    let channel: ReturnType<typeof supabase.channel>;
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      channel = supabase
+        .channel("dashboard-xp-realtime")
+        .on("postgres_changes", {
+          event: "UPDATE",
+          schema: "public",
+          table: "profiles",
+          filter: `id=eq.${user.id}`,
+        }, (payload) => {
+          if (payload.new.dream_xp !== undefined) setDreamXP(payload.new.dream_xp);
+          if (payload.new.dream_level !== undefined) setDreamLevel(payload.new.dream_level);
+        })
+        .subscribe();
+    });
+
+    return () => { if (channel) supabase.removeChannel(channel); };
   }, []);
 
   const progressData =

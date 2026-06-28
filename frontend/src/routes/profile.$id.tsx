@@ -1,9 +1,12 @@
+
+
 import { createFileRoute,useNavigate  } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/AppLayout";
 import { BackButton } from "@/components/BackButton";
 import { ProfileLayout } from "@/components/ProfileLayout";
+import { UserAvatar } from "@/components/UserAvatar";
 import {
   Dialog,
   DialogContent,
@@ -150,7 +153,9 @@ function UserProfile() {
         follower:profiles!followers_follower_id_fkey(
           id,
           anonymous_name,
-          dream_vibe
+          dream_vibe,
+          avatar_gradient,
+          avatar_url
         )
       `)
       .eq("following_id", id);
@@ -190,7 +195,9 @@ function UserProfile() {
         following:profiles!followers_following_id_fkey(
           id,
           anonymous_name,
-          dream_vibe
+          dream_vibe,
+          avatar_gradient,
+          avatar_url
         )
       `)
       .eq("follower_id", id);
@@ -281,9 +288,12 @@ function UserProfile() {
                 }
                 }
               >
-                <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center">
-                  {item.follower.anonymous_name?.[0]}
-                </div>
+                <UserAvatar
+                  avatarGradient={item.follower.avatar_gradient}
+                  avatarUrl={item.follower.avatar_url}
+                  name={item.follower.anonymous_name}
+                  size="sm"
+                />
 
                 <div>
                   {item.follower.anonymous_name}
@@ -345,9 +355,12 @@ function UserProfile() {
                   })
                 }}
               >
-                <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center">
-                  {item.following.anonymous_name?.[0]}
-                </div>
+                <UserAvatar
+                  avatarGradient={item.following.avatar_gradient}
+                  avatarUrl={item.following.avatar_url}
+                  name={item.following.anonymous_name}
+                  size="sm"
+                />
 
                 <div>
                   {item.following.anonymous_name}

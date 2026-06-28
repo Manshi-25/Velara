@@ -19,16 +19,7 @@ export function useOutgoingRequests() {
     enabled: !!user,
   });
 
-  /*useRealtimeSubscription(
-    (onChange) => {
-        if (!user) return null;
-        return subscribeOutgoingRequests(user.id, onChange);
-      },
-    () => queryClient.invalidateQueries({ queryKey: ["chat-requests", "outgoing"] }),
-    [user?.id],
-    { enabled: !!user }
-  );*/
-
+  
   return {
     outgoingRequests: query.data ?? [],
     isLoading: query.isLoading,

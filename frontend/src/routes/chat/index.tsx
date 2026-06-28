@@ -75,7 +75,7 @@ function ChatList() {
         <h2 className="font-display text-3xl sm:text-4xl">Messages</h2>
       </header>
 
-      <div className="max-w-2xl mx-auto space-y-4">
+      <div className="w-full max-w-5xl mx-auto flex flex-col h-[calc(100vh-16rem)] sm:h-[calc(100vh-18rem)] mb-6 sm:mb-8 space-y-4">
         <SearchBar
           value={search}
           onChange={setSearch}

@@ -1,11 +1,12 @@
-import { createFileRoute, Outlet } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState, useRef } from "react";
 import { Link } from "@tanstack/react-router";
 import { AppLayout } from "@/components/AppLayout";
 import { BackButton } from "@/components/BackButton";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Pencil } from "lucide-react";
+import { Pencil, Check, Upload, X } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -15,11 +16,34 @@ import { useNavigate } from "@tanstack/react-router";
 import {MoreVertical,Trash2,Archive,Pin,Copy,Edit} from "lucide-react";
 import {DropdownMenu,DropdownMenuContent,DropdownMenuItem,DropdownMenuTrigger} from "@/components/ui/dropdown-menu";
 import { generateDreamImage } from "@/lib/randomDreamImage";
-
+import { UserAvatar } from "@/components/UserAvatar";
 
 export const Route = createFileRoute("/account")({
   component: Profile
 });
+
+// ── All dream vibes (was only 5 in the old select dropdown) ─────────────────
+const DREAM_VIBES = [
+  { label: "Lucid Dreamer",   emoji: "🌀" },
+  { label: "Night Wanderer",  emoji: "🌙" },
+  { label: "Cosmic Explorer", emoji: "🚀" },
+  { label: "Mystical Soul",   emoji: "✨" },
+  { label: "Dream Collector", emoji: "📜" },
+  { label: "Shadow Walker",   emoji: "🌑" },
+  { label: "Star Whisperer",  emoji: "⭐" },
+  { label: "Void Dreamer",    emoji: "🕳️" },
+];
+
+const AVATAR_GRADIENTS = [
+  { name: "Ember",    class: "from-orange-500 to-red-600" },
+  { name: "Violet",   class: "from-violet-500 to-purple-700" },
+  { name: "Ocean",    class: "from-sky-400 to-blue-600" },
+  { name: "Forest",   class: "from-emerald-400 to-green-600" },
+  { name: "Rose",     class: "from-pink-400 to-rose-600" },
+  { name: "Gold",     class: "from-amber-400 to-yellow-600" },
+  { name: "Midnight", class: "from-slate-500 to-slate-800" },
+  { name: "Aurora",   class: "from-teal-400 to-cyan-600" },
+];
 
 function Profile() {
   const profile = useProfile();
@@ -27,13 +51,18 @@ function Profile() {
   const [bio, setBio] = useState("");
   const [username, setUsername] = useState("");
   const [dreamVibe, setDreamVibe] = useState("");
+  // NEW: avatar state for edit dialog
+  const [avatarGradient, setAvatarGradient] = useState("from-violet-500 to-purple-700");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [openFollowers, setOpenFollowers] = useState(false);
   const [openFollowing, setOpenFollowing] = useState(false);
   const [followers, setFollowers] = useState<any[]>([]);
   const [following, setFollowing] = useState<any[]>([]);
   const [followingMap, setFollowingMap] = useState<Record<string, boolean>>({});
   const [saving, setSaving] = useState(false);
-  const [dreams,setDreams] = useState<any[]>([]);
   const [activeTab,setActiveTab]=useState("posts");
   const [posts,setPosts]=useState<any[]>([]);
   const [drafts,setDrafts]=useState<any[]>([]);
@@ -43,13 +72,16 @@ function Profile() {
   const profileLink = typeof window !== "undefined" && profile?.id
   ? `${window.location.origin}/profile/${profile.id}`
   : "";
-  console.log("QR link:", profileLink);
+
   useEffect(() => {
     if (!profile) return;
 
     setBio(profile.bio || "");
     setUsername(profile.anonymous_name || "");
     setDreamVibe(profile.dream_vibe || "");
+    // NEW: sync avatar fields
+    setAvatarGradient(profile.avatar_gradient || "from-violet-500 to-purple-700");
+    setAvatarUrl(profile.avatar_url || null);
 
     async function loadData() {
       const { data: { user } } = await supabase.auth.getUser();
@@ -98,7 +130,7 @@ function Profile() {
   async function loadFollowers() {
     if (!profile?.id) return;
     const { data: { user } } = await supabase.auth.getUser();
-    const { data, error } = await supabase.from("followers").select(`follower_id, follower:profiles!followers_follower_id_fkey( id, anonymous_name, dream_vibe )`).eq("following_id", profile.id);
+    const { data, error } = await supabase.from("followers").select(`follower_id, follower:profiles!followers_follower_id_fkey( id, anonymous_name, dream_vibe, avatar_gradient, avatar_url )`).eq("following_id", profile.id);
     if (error) { console.log(error); return; }
     setFollowers(data || []);
     if (!user || !data) return;
@@ -112,7 +144,7 @@ function Profile() {
   async function loadFollowing() {
     if (!profile?.id) return;
     const { data: { user } } = await supabase.auth.getUser();
-    const { data, error } = await supabase.from("followers").select(`following_id, following:profiles!followers_following_id_fkey( id, anonymous_name, dream_vibe )`).eq("follower_id", profile.id);
+    const { data, error } = await supabase.from("followers").select(`following_id, following:profiles!followers_following_id_fkey( id, anonymous_name, dream_vibe, avatar_gradient, avatar_url )`).eq("follower_id", profile.id);
     if (error) { console.log(error); return; }
     setFollowing(data || []);
     if (!user || !data) return;
@@ -141,6 +173,50 @@ function Profile() {
     await loadFollowing();
   }
 
+  // NEW: avatar upload
+  async function uploadAvatar(file: File) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    setUploadingImage(true);
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      const filePath = `avatars/${fileName}`;
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, file, { cacheControl: "3600", upsert: false });
+      if (uploadError) { toast.error("Failed to upload image"); return; }
+      const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(filePath);
+      const { error: updateError } = await supabase.from("profiles").update({ avatar_url: publicUrl, avatar_gradient: null }).eq("id", user.id);
+      if (updateError) { toast.error("Failed to save avatar"); return; }
+      setAvatarUrl(publicUrl);
+      setAvatarGradient("");
+      toast.success("Avatar uploaded ✨");
+    } catch {
+      toast.error("Failed to upload avatar");
+    } finally {
+      setUploadingImage(false);
+    }
+  }
+
+  // NEW: avatar remove
+  async function removeAvatar() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { error } = await supabase.from("profiles").update({ avatar_url: null }).eq("id", user.id);
+    if (error) { toast.error("Failed to remove avatar"); return; }
+    setAvatarUrl(null);
+    toast.success("Avatar removed");
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { toast.error("Please select an image file"); return; }
+    if (file.size > 2 * 1024 * 1024) { toast.error("Image must be less than 2 MB"); return; }
+    uploadAvatar(file);
+  }
+
   async function saveProfile() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -152,6 +228,11 @@ function Profile() {
         bio,
         dream_vibe: dreamVibe
       };
+
+      // NEW: save gradient only when no image
+      if (!avatarUrl) {
+        updateData.avatar_gradient = avatarGradient;
+      }
 
       if (username !== profile.anonymous_name && canChangeUsername()) {
         updateData.anonymous_name = username;
@@ -291,6 +372,7 @@ function Profile() {
   }
 
   const wordCount = bio.trim() ? bio.trim().split(/\s+/).length : 0;
+  const initials = (username || profile.anonymous_name || "?")[0]?.toUpperCase();
 
   return (
     <AppLayout>
@@ -298,9 +380,8 @@ function Profile() {
 
       <div className="bg-card border rounded-3xl p-6 shadow-lg">
         <div className="flex flex-col sm:flex-row gap-6 items-center">
-          <div className="h-24 w-24 rounded-full gradient-violet grid place-items-center text-white text-3xl font-bold shadow-lg">
-            {profile.anonymous_name?.[0]?.toUpperCase()}
-          </div>
+          {/* Avatar — now uses gradient or image from DB */}
+          <UserAvatar profile={profile} size="xl" className="shadow-lg" />
 
           <div className="flex-1">
             <h2 className="font-display text-3xl">
@@ -431,7 +512,6 @@ function Profile() {
                 </Link>
               ))
             : drafts.map((draft) => (
-                //add here
                 <div
                   key={draft.id}
                   className="rounded-3xl overflow-hidden border bg-card relative"
@@ -489,13 +569,96 @@ function Profile() {
         </div>
       </div>
 
+      {/* ── Edit Profile Dialog — now has avatar + all dream vibes ── */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="rounded-3xl border bg-card p-6">
+        <DialogContent className="rounded-3xl border bg-card p-6 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-2xl">Edit Profile</DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-5">
+          <div className="space-y-5 mt-2">
+
+            {/* Avatar preview */}
+            <div className="flex items-center gap-4">
+              <div
+                className={`h-16 w-16 rounded-full shrink-0 shadow-lg overflow-hidden ${
+                  avatarUrl
+                    ? "bg-cover bg-center"
+                    : `bg-gradient-to-br ${avatarGradient || "from-violet-500 to-purple-700"}`
+                } grid place-items-center text-white text-2xl font-bold`}
+                style={avatarUrl ? { backgroundImage: `url(${avatarUrl})` } : {}}
+              >
+                {!avatarUrl && initials}
+              </div>
+              <div>
+                <p className="text-sm font-medium">{username || profile.anonymous_name}</p>
+                <p className="text-xs text-muted-foreground">{dreamVibe || "Dream Wanderer"}</p>
+              </div>
+            </div>
+
+            {/* Image upload */}
+            <div>
+              <label className="text-sm font-medium block mb-2">Avatar Image</label>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                accept="image/*"
+                className="hidden"
+              />
+              <div className="flex gap-2 flex-wrap">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingImage}
+                  className="gap-2"
+                >
+                  <Upload className="h-4 w-4" />
+                  {uploadingImage ? "Uploading…" : "Upload Image"}
+                </Button>
+                {avatarUrl && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={removeAvatar}
+                    className="gap-2 text-red-400 hover:text-red-500"
+                  >
+                    <X className="h-4 w-4" /> Remove Image
+                  </Button>
+                )}
+                <span className="text-xs text-muted-foreground self-center ml-auto">
+                  {avatarUrl ? "📷 Image Avatar" : "🎨 Gradient Avatar"}
+                </span>
+              </div>
+            </div>
+
+            {/* Gradient picker — only when no image */}
+            {!avatarUrl && (
+              <div>
+                <label className="text-sm font-medium block mb-2">Avatar Gradient</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {AVATAR_GRADIENTS.map((g) => (
+                    <button
+                      key={g.name}
+                      onClick={() => setAvatarGradient(g.class)}
+                      title={g.name}
+                      className={`relative h-10 w-10 rounded-full bg-gradient-to-br ${g.class} transition hover:scale-110 ${
+                        avatarGradient === g.class
+                          ? "ring-2 ring-white ring-offset-2 ring-offset-card"
+                          : ""
+                      }`}
+                    >
+                      {avatarGradient === g.class && (
+                        <Check className="h-4 w-4 text-white absolute inset-0 m-auto" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Username */}
             <div>
               <label className="text-sm block mb-2">Username</label>
               <input
@@ -511,6 +674,7 @@ function Profile() {
               </p>
             </div>
 
+            {/* Bio */}
             <div>
               <label className="text-sm block mb-2">Bio</label>
               <textarea
@@ -528,24 +692,31 @@ function Profile() {
               </p>
             </div>
 
+            {/* Dream Vibe — all 8 as buttons instead of a select */}
             <div>
-              <label className="text-sm block mb-2">Dream vibe</label>
-              <select
-                value={dreamVibe}
-                onChange={(e) => setDreamVibe(e.target.value)}
-                className="w-full border rounded-xl p-3 bg-background"
-              >
-                <option>Lucid Dreamer</option>
-                <option>Night Wanderer</option>
-                <option>Cosmic Explorer</option>
-                <option>Mystical Soul</option>
-                <option>Dream Collector</option>
-              </select>
+              <label className="text-sm font-medium block mb-2">Dream Vibe</label>
+              <div className="grid grid-cols-2 gap-2">
+                {DREAM_VIBES.map((v) => (
+                  <button
+                    key={v.label}
+                    onClick={() => setDreamVibe(v.label)}
+                    className={`flex items-center gap-2 p-3 rounded-xl border text-sm transition ${
+                      dreamVibe === v.label
+                        ? "border-primary bg-primary/10 text-foreground"
+                        : "border-border/60 hover:bg-background/40 text-muted-foreground"
+                    }`}
+                  >
+                    <span>{v.emoji}</span>
+                    <span>{v.label}</span>
+                    {dreamVibe === v.label && <Check className="h-3 w-3 ml-auto text-primary" />}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <Button
               className="w-full gradient-violet"
-              disabled={saving}
+              disabled={saving || uploadingImage}
               onClick={saveProfile}
             >
               {saving ? "Saving..." : "Save Changes"}
@@ -553,6 +724,7 @@ function Profile() {
           </div>
         </DialogContent>
       </Dialog>
+
       {/* QR Dialog */}
       <Dialog open={showQR} onOpenChange={setShowQR}>
         <DialogContent className="rounded-3xl bg-card border border-border/60 p-6">
@@ -601,7 +773,7 @@ function Profile() {
             {followers.map((item: any) => (
               <div key={item.follower.id} className="flex items-center justify-between">
                 <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate({ to: "/profile/$id", params: { id: item.follower.id } })}>
-                  <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center">{item.follower.anonymous_name?.[0]}</div>
+                  <UserAvatar profile={item.follower} size="sm" />
                   <div>
                     <div>{item.follower.anonymous_name}</div>
                   </div>
@@ -626,7 +798,7 @@ function Profile() {
             {following.map((item: any) => (
               <div key={item.following.id} className="flex items-center justify-between">
                 <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate({ to: "/profile/$id", params: { id: item.following.id } })}>
-                  <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center">{item.following.anonymous_name?.[0]}</div>
+                  <UserAvatar profile={item.following} size="sm" />
                   <div>
                     <div className="font-medium">{item.following.anonymous_name}</div>
                   </div>
@@ -644,4 +816,3 @@ function Profile() {
     </AppLayout>
   );
 }
-

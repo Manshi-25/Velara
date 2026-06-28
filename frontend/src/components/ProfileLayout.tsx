@@ -1,7 +1,9 @@
+
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { generateDreamImage } from "@/lib/randomDreamImage";
 import { ChatActionButton } from "@/components/chat/ChatActionButton";
+import { UserAvatar } from "@/components/UserAvatar";
 
 type ProfileLayoutProps = {
   profile: any;
@@ -44,11 +46,13 @@ export function ProfileLayout({
       {/* HEADER */}
       <div className="bg-card border rounded-3xl p-6 shadow-lg">
         <div className="flex flex-col sm:flex-row gap-6 items-center">
-          
-          {/* Avatar */}
-          <div className="h-24 w-24 rounded-full bg-primary flex items-center justify-center text-white text-3xl font-bold">
-            {profile.anonymous_name?.[0]?.toUpperCase()}
-          </div>
+
+          {/* Avatar — respects gradient or image from DB */}
+          <UserAvatar
+            profile={profile}
+            size="xl"
+            className="shadow-lg"
+          />
 
           {/* Info */}
           <div className="flex-1">
@@ -100,9 +104,8 @@ export function ProfileLayout({
                 {isFollowing ? "Echoing" : "Echo"}
               </Button>
               <ChatActionButton userId={profile.id} />
-            </div> 
+            </div>
           )}
-
         </div>
       </div>
 
