@@ -4,7 +4,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { Orbit, Rocket } from "lucide-react";
 import {
   Menu, Home, Compass, PenSquare, LayoutDashboard, User, Settings, LogOut,
-  Bell, Sun, Moon, Search, Sparkles, LogIn, MessageCircle,
+  Bell, Sun, Moon, Search, Sparkles, LogIn, MessageCircle, Flame,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,7 @@ const publicNav = [
 const authNav = [
   { to: "/", label: "Home", icon: Home },
   { to: "/explore", label: "Explore", icon: Compass },
+  { to: "/trending", label: "Trending", icon: Flame },
   { to: "/post", label: "Post Dream", icon: PenSquare },
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/account", label: "Profile", icon: User },

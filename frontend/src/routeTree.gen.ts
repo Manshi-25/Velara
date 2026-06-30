@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TrendingRouteImport } from './routes/trending'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
@@ -44,6 +45,11 @@ import { Route as SettingsAccountProfileRouteImport } from './routes/settings.ac
 import { Route as SettingsAccountDataRouteImport } from './routes/settings.account.data'
 import { Route as ChatNewUserIdRouteImport } from './routes/chat/new.$userId'
 
+const TrendingRoute = TrendingRouteImport.update({
+  id: '/trending',
+  path: '/trending',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -226,6 +232,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRouteWithChildren
+  '/trending': typeof TrendingRoute
   '/chat/$conversationId': typeof ChatConversationIdRoute
   '/chat/requests': typeof ChatRequestsRoute
   '/dream/$id': typeof DreamIdRoute
@@ -261,6 +268,7 @@ export interface FileRoutesByTo {
   '/post': typeof PostRoute
   '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
+  '/trending': typeof TrendingRoute
   '/chat/$conversationId': typeof ChatConversationIdRoute
   '/chat/requests': typeof ChatRequestsRoute
   '/dream/$id': typeof DreamIdRoute
@@ -297,6 +305,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRouteWithChildren
+  '/trending': typeof TrendingRoute
   '/chat/$conversationId': typeof ChatConversationIdRoute
   '/chat/requests': typeof ChatRequestsRoute
   '/dream/$id': typeof DreamIdRoute
@@ -335,6 +344,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/search'
     | '/settings'
+    | '/trending'
     | '/chat/$conversationId'
     | '/chat/requests'
     | '/dream/$id'
@@ -370,6 +380,7 @@ export interface FileRouteTypes {
     | '/post'
     | '/reset-password'
     | '/search'
+    | '/trending'
     | '/chat/$conversationId'
     | '/chat/requests'
     | '/dream/$id'
@@ -405,6 +416,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/search'
     | '/settings'
+    | '/trending'
     | '/chat/$conversationId'
     | '/chat/requests'
     | '/dream/$id'
@@ -442,6 +454,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SearchRoute: typeof SearchRoute
   SettingsRoute: typeof SettingsRouteWithChildren
+  TrendingRoute: typeof TrendingRoute
   ChatConversationIdRoute: typeof ChatConversationIdRoute
   ChatRequestsRoute: typeof ChatRequestsRoute
   DreamIdRoute: typeof DreamIdRoute
@@ -453,6 +466,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/trending': {
+      id: '/trending'
+      path: '/trending'
+      fullPath: '/trending'
+      preLoaderRoute: typeof TrendingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -759,6 +779,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SearchRoute: SearchRoute,
   SettingsRoute: SettingsRouteWithChildren,
+  TrendingRoute: TrendingRoute,
   ChatConversationIdRoute: ChatConversationIdRoute,
   ChatRequestsRoute: ChatRequestsRoute,
   DreamIdRoute: DreamIdRoute,
